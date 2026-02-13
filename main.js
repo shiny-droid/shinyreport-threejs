@@ -1,13 +1,8 @@
 import * as THREE from 'https://esm.sh/three@0.160.0';
 import { GLTFLoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { FontLoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'https://esm.sh/three@0.160.0/examples/jsm/geometries/TextGeometry.js';
-import { EffectComposer } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js';
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x071a2c);
+scene.background = new THREE.Color(0x0b1e34);
 
 // CAMERA
 const camera = new THREE.PerspectiveCamera(
@@ -22,47 +17,31 @@ camera.position.set(0, 3, 14);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.4;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
 document.body.appendChild(renderer.domElement);
 
-// POSTPROCESSING
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-
-const bloom = new UnrealBloomPass(
-  new THREE.Vector2(window.innerWidth, window.innerHeight),
-  1.4,  // strength
-  0.4,  // radius
-  0.85  // threshold
-);
-composer.addPass(bloom);
-
+// RESIZE
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  composer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// 🔥 ILUMINACIÓN CINEMÁTICA
+// LIGHTING (correcto y equilibrado)
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 
-const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
-keyLight.position.set(5, 10, 5);
-scene.add(keyLight);
+const key = new THREE.DirectionalLight(0xffffff, 1.5);
+key.position.set(5, 10, 5);
+scene.add(key);
 
-const rimLight = new THREE.DirectionalLight(0x88ccff, 3);
-rimLight.position.set(-5, 4, -6);
-scene.add(rimLight);
+const rim = new THREE.DirectionalLight(0x88ccff, 1.2);
+rim.position.set(-5, 5, -5);
+scene.add(rim);
 
-const pointGlow = new THREE.PointLight(0x66ccff, 8, 15);
-pointGlow.position.set(0, 2, 0);
-scene.add(pointGlow);
-
-// MODEL
+// LOAD MODEL
 let mascot;
 const loader = new GLTFLoader();
 
@@ -70,6 +49,7 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
 
   mascot = gltf.scene;
 
+  // scale automático
   const box = new THREE.Box3().setFromObject(mascot);
   const size = new THREE.Vector3();
   box.getSize(size);
@@ -77,47 +57,29 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
   const scale = 6 / maxDim;
   mascot.scale.setScalar(scale);
 
+  // centrar
   box.setFromObject(mascot);
   const center = new THREE.Vector3();
   box.getCenter(center);
   mascot.position.sub(center);
 
-  mascot.rotation.y = Math.PI + THREE.MathUtils.degToRad(135);
-
-  // 🔥 MATERIAL CRISTAL
-  mascot.traverse((child) => {
-    if (child.isMesh) {
-      child.material = new THREE.MeshPhysicalMaterial({
-        color: 0x99ddff,
-        metalness: 0,
-        roughness: 0.05,
-        transmission: 1,
-        thickness: 1.5,
-        transparent: true,
-        opacity: 0.9,
-        clearcoat: 1,
-        clearcoatRoughness: 0,
-        ior: 1.5,
-      });
-    }
-  });
+  // rotación perfil izquierda
+  mascot.rotation.y = Math.PI + THREE.MathUtils.degToRad(180);
 
   scene.add(mascot);
 });
 
-// ANIMACIÓN
+// ANIMATE
 const clock = new THREE.Clock();
 
 function animate() {
   requestAnimationFrame(animate);
 
-  const t = clock.getElapsedTime();
-
   if (mascot) {
-    mascot.position.y = Math.sin(t * 0.8) * 0.25;
+    mascot.position.y = Math.sin(clock.getElapsedTime() * 0.8) * 0.25;
   }
 
-  composer.render();
+  renderer.render(scene, camera);
 }
 
 animate();
