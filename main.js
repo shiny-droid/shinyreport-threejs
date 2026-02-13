@@ -41,7 +41,9 @@ rimLight.position.set(-5, 5, -5);
 scene.add(rimLight);
 
 let mascot;
-let ringGroup = new THREE.Group();
+let orbitGroup = new THREE.Group(); // 🔥 grupo que orbita
+
+scene.add(orbitGroup);
 
 const loader = new GLTFLoader();
 
@@ -63,18 +65,15 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
   box.getCenter(center);
   mascot.position.sub(center);
 
-  // 🔥 Mirar a la izquierda
-  mascot.rotation.y = Math.PI / 2;
+  // 🔥 ROTAR 180° TOTAL (90° + 90°)
+  mascot.rotation.y = Math.PI;
 
   scene.add(mascot);
 
-  // Añadir aro al modelo
-  mascot.add(ringGroup);
-
-  createRing();
+  createOrbitText();
 });
 
-function createRing() {
+function createOrbitText() {
 
   const fontLoader = new FontLoader();
 
@@ -86,7 +85,6 @@ function createRing() {
         font: font,
         size: 0.6,
         height: 0.05,
-        curveSegments: 12
       });
 
       const textMat = new THREE.MeshBasicMaterial({
@@ -97,21 +95,19 @@ function createRing() {
 
       // centrar texto
       textGeo.computeBoundingBox();
-      const textWidth = textGeo.boundingBox.max.x - textGeo.boundingBox.min.x;
-      mesh.position.x = -textWidth / 2;
+      const width = textGeo.boundingBox.max.x - textGeo.boundingBox.min.x;
+      mesh.position.x = -width / 2;
 
-      ringGroup.add(mesh);
+      // 🔥 colocar texto delante del modelo
+      mesh.position.z = 6;
+      mesh.position.y = 0.4; // altura cintura
 
-      // 🔥 altura cintura
-      ringGroup.position.y = 0.4;
-
-      // 🔥 horizontal puro (sin inclinación)
-      ringGroup.rotation.x = 0;
+      orbitGroup.add(mesh);
     }
   );
 }
 
-// Animación
+// Animation
 const clock = new THREE.Clock();
 const LOOP_DURATION = 5;
 
@@ -125,8 +121,8 @@ function animate() {
     mascot.position.y = Math.sin(progress * Math.PI * 2) * 0.3;
   }
 
-  // 🔥 rotación horizontal
-  ringGroup.rotation.y = progress * Math.PI * 2;
+  // 🔥 esto hace que el texto orbite alrededor
+  orbitGroup.rotation.y = progress * Math.PI * 2;
 
   renderer.render(scene, camera);
 }
