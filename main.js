@@ -1,13 +1,12 @@
 import * as THREE from 'https://esm.sh/three@0.160.0';
 import { GLTFLoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { RGBELoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/RGBELoader.js';
 import { EffectComposer } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js';
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x061628);
-scene.fog = new THREE.Fog(0x061628, 15, 40);
+scene.background = new THREE.Color(0x04101c);
+scene.fog = new THREE.Fog(0x04101c, 15, 40);
 
 // CAMERA
 const camera = new THREE.PerspectiveCamera(
@@ -24,19 +23,18 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.4;
-renderer.physicallyCorrectLights = true;
+renderer.toneMappingExposure = 1.8;
 document.body.appendChild(renderer.domElement);
 
-// POSTPROCESSING
+// POST PROCESSING
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 
 const bloom = new UnrealBloomPass(
   new THREE.Vector2(window.innerWidth, window.innerHeight),
-  0.8, // strength
-  0.5, // radius
-  0.85 // threshold
+  1.6,
+  0.6,
+  0.6
 );
 composer.addPass(bloom);
 
@@ -48,45 +46,16 @@ window.addEventListener("resize", () => {
   composer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// HDRI
-new RGBELoader().load(
-  'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_09_1k.hdr',
-  (texture) => {
-    texture.mapping = THREE.EquirectangularReflectionMapping;
-    scene.environment = texture;
-  }
-);
-
 // LIGHTING
-scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+scene.add(new THREE.AmbientLight(0xffffff, 0.2));
 
-const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
-keyLight.position.set(5, 10, 5);
-scene.add(keyLight);
-
-const rimLight = new THREE.DirectionalLight(0x66ccff, 3);
-rimLight.position.set(-5, 5, -6);
+const rimLight = new THREE.DirectionalLight(0x00ccff, 3);
+rimLight.position.set(-5, 5, -5);
 scene.add(rimLight);
-
-const fillLight = new THREE.PointLight(0x88ddff, 6, 20);
-fillLight.position.set(0, 4, 6);
-scene.add(fillLight);
-
-// FLOOR
-const floorGeo = new THREE.CircleGeometry(12, 64);
-const floorMat = new THREE.MeshStandardMaterial({
-  color: 0x0a223a,
-  metalness: 0.8,
-  roughness: 0.3
-});
-const floor = new THREE.Mesh(floorGeo, floorMat);
-floor.rotation.x = -Math.PI / 2;
-floor.position.y = 0;
-scene.add(floor);
 
 // PARTICLES
 const particlesGeo = new THREE.BufferGeometry();
-const particleCount = 200;
+const particleCount = 250;
 const positions = [];
 
 for (let i = 0; i < particleCount; i++) {
@@ -103,7 +72,7 @@ particlesGeo.setAttribute(
 );
 
 const particlesMat = new THREE.PointsMaterial({
-  color: 0x66ccff,
+  color: 0x00ccff,
   size: 0.05,
   transparent: true,
   opacity: 0.6
@@ -112,7 +81,7 @@ const particlesMat = new THREE.PointsMaterial({
 const particles = new THREE.Points(particlesGeo, particlesMat);
 scene.add(particles);
 
-// MODEL
+// LOAD MODEL
 let mascot;
 const loader = new GLTFLoader();
 
@@ -120,6 +89,7 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
 
   mascot = gltf.scene;
 
+  // SCALE
   const box = new THREE.Box3().setFromObject(mascot);
   const size = new THREE.Vector3();
   box.getSize(size);
@@ -142,31 +112,22 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
 
       if (name.includes("eye")) {
 
-        child.material = new THREE.MeshPhysicalMaterial({
-          color: 0x000000,
-          metalness: 1,
-          roughness: 0,
-          clearcoat: 1,
-          clearcoatRoughness: 0,
-          envMapIntensity: 2
+        child.material = new THREE.MeshBasicMaterial({
+          color: 0xffffff
         });
 
       } else {
 
         child.material = new THREE.MeshPhysicalMaterial({
-          color: new THREE.Color(0.6, 0.85, 1),
+          color: new THREE.Color(0.2, 0.8, 1.0),
           metalness: 0,
-          roughness: 0.2,
-          transmission: 0.7,
-          thickness: 4,
+          roughness: 0,
+          transmission: 0,
           transparent: true,
-          opacity: 1,
-          ior: 1.25,
-          clearcoat: 0.4,
-          clearcoatRoughness: 0.3,
-          attenuationColor: new THREE.Color(0.6, 0.85, 1),
-          attenuationDistance: 2,
-          envMapIntensity: 1.5
+          opacity: 0.35,
+          emissive: new THREE.Color(0.2, 0.9, 1.0),
+          emissiveIntensity: 2.0,
+          clearcoat: 0
         });
 
       }
@@ -174,6 +135,22 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
   });
 
   scene.add(mascot);
+
+  // HALO
+  const haloGeo = new THREE.RingGeometry(3.5, 4.5, 64);
+  const haloMat = new THREE.MeshBasicMaterial({
+    color: 0x00ccff,
+    transparent: true,
+    opacity: 0.4,
+    side: THREE.DoubleSide
+  });
+
+  const halo = new THREE.Mesh(haloGeo, haloMat);
+  halo.rotation.x = -Math.PI / 2;
+  halo.position.y = 1.2;
+  scene.add(halo);
+
+  mascot.userData.halo = halo;
 });
 
 // ANIMATION
@@ -185,7 +162,8 @@ function animate() {
   const t = clock.getElapsedTime();
 
   if (mascot) {
-    mascot.position.y = 1.2 + Math.sin(t * 0.8) * 0.25;
+    mascot.position.y = 1.2 + Math.sin(t * 1.2) * 0.25;
+    mascot.userData.halo.rotation.z += 0.01;
   }
 
   particles.rotation.y += 0.0005;
