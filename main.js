@@ -41,8 +41,7 @@ rimLight.position.set(-5, 5, -5);
 scene.add(rimLight);
 
 let mascot;
-let orbitGroup = new THREE.Group(); // 🔥 grupo que orbita
-
+let orbitGroup = new THREE.Group();
 scene.add(orbitGroup);
 
 const loader = new GLTFLoader();
@@ -65,15 +64,15 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
   box.getCenter(center);
   mascot.position.sub(center);
 
-  // 🔥 ROTAR 180° TOTAL (90° + 90°)
-  mascot.rotation.y = Math.PI;
+  // 🔥 Rotar 45° más a la izquierda (perfil)
+  mascot.rotation.y = Math.PI + THREE.MathUtils.degToRad(45);
 
   scene.add(mascot);
 
-  createOrbitText();
+  createCurvedRing();
 });
 
-function createOrbitText() {
+function createCurvedRing() {
 
   const fontLoader = new FontLoader();
 
@@ -81,28 +80,37 @@ function createOrbitText() {
     'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
     (font) => {
 
-      const textGeo = new TextGeometry("COMING SOON", {
-        font: font,
-        size: 0.6,
-        height: 0.05,
+      const text = "COMING SOON";
+      const letters = text.split("");
+
+      const radius = 6;
+      const totalAngle = Math.PI * 1.2; // arco visible
+      const startAngle = -totalAngle / 2;
+
+      letters.forEach((letter, i) => {
+
+        const geo = new TextGeometry(letter, {
+          font: font,
+          size: 0.6,
+          height: 0.05,
+        });
+
+        const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+        const mesh = new THREE.Mesh(geo, mat);
+
+        const angle = startAngle + (i / letters.length) * totalAngle;
+
+        mesh.position.x = Math.sin(angle) * radius;
+        mesh.position.z = Math.cos(angle) * radius;
+
+        // 🔥 orientar tangencialmente
+        mesh.rotation.y = angle;
+
+        mesh.position.y = 0.4; // cintura
+
+        orbitGroup.add(mesh);
       });
-
-      const textMat = new THREE.MeshBasicMaterial({
-        color: 0xffffff
-      });
-
-      const mesh = new THREE.Mesh(textGeo, textMat);
-
-      // centrar texto
-      textGeo.computeBoundingBox();
-      const width = textGeo.boundingBox.max.x - textGeo.boundingBox.min.x;
-      mesh.position.x = -width / 2;
-
-      // 🔥 colocar texto delante del modelo
-      mesh.position.z = 6;
-      mesh.position.y = 0.4; // altura cintura
-
-      orbitGroup.add(mesh);
     }
   );
 }
@@ -121,7 +129,7 @@ function animate() {
     mascot.position.y = Math.sin(progress * Math.PI * 2) * 0.3;
   }
 
-  // 🔥 esto hace que el texto orbite alrededor
+  // 🔥 esto hace que todo el texto orbite como cinturón
   orbitGroup.rotation.y = progress * Math.PI * 2;
 
   renderer.render(scene, camera);
