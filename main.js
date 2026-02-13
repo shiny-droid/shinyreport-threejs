@@ -20,7 +20,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.4;
+renderer.toneMappingExposure = 1.3;
 renderer.physicallyCorrectLights = true;
 document.body.appendChild(renderer.domElement);
 
@@ -31,9 +31,8 @@ window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// 🔥 HDRI ENVIRONMENT
-const rgbeLoader = new RGBELoader();
-rgbeLoader.load(
+// HDRI ENVIRONMENT
+new RGBELoader().load(
   'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_09_1k.hdr',
   (texture) => {
     texture.mapping = THREE.EquirectangularReflectionMapping;
@@ -41,16 +40,21 @@ rgbeLoader.load(
   }
 );
 
-// LIGHTING SUAVE
-scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+// LIGHTING (orgánico y suave)
 
-const key = new THREE.DirectionalLight(0xffffff, 2);
-key.position.set(5, 10, 5);
-scene.add(key);
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 
-const rim = new THREE.DirectionalLight(0x88ccff, 2);
-rim.position.set(-5, 5, -5);
-scene.add(rim);
+const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+keyLight.position.set(5, 10, 5);
+scene.add(keyLight);
+
+const rimLight = new THREE.DirectionalLight(0x88ccff, 2);
+rimLight.position.set(-5, 5, -5);
+scene.add(rimLight);
+
+const fillLight = new THREE.PointLight(0x99ddff, 4, 20);
+fillLight.position.set(0, 4, 6);
+scene.add(fillLight);
 
 // LOAD MODEL
 let mascot;
@@ -60,6 +64,7 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
 
   mascot = gltf.scene;
 
+  // Auto scale (más pequeño)
   const box = new THREE.Box3().setFromObject(mascot);
   const size = new THREE.Vector3();
   box.getSize(size);
@@ -67,38 +72,45 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
   const scale = 4.8 / maxDim;
   mascot.scale.setScalar(scale);
 
+  // Center
   box.setFromObject(mascot);
   const center = new THREE.Vector3();
   box.getCenter(center);
   mascot.position.sub(center);
 
+  // Más arriba
   mascot.position.y += 1.2;
 
+  // Perfil izquierda
   mascot.rotation.y = Math.PI + THREE.MathUtils.degToRad(225);
 
-  // 🔥 MATERIAL CRISTAL REAL
+  // MATERIAL ORGÁNICO
   mascot.traverse((child) => {
     if (child.isMesh) {
+
       child.material = new THREE.MeshPhysicalMaterial({
-        color: 0x99ddff,
+        color: new THREE.Color(0.65, 0.85, 1.0),
         metalness: 0,
-        roughness: 0.05,
-        transmission: 1,
-        thickness: 2,
+        roughness: 0.25,
+        transmission: 0.65,
+        thickness: 4.0,
         transparent: true,
         opacity: 1,
-        ior: 1.5,
-        clearcoat: 1,
-        clearcoatRoughness: 0,
-        envMapIntensity: 1.5
+        ior: 1.25,
+        clearcoat: 0.3,
+        clearcoatRoughness: 0.4,
+        attenuationColor: new THREE.Color(0.6, 0.85, 1),
+        attenuationDistance: 2.5,
+        envMapIntensity: 1.2
       });
+
     }
   });
 
   scene.add(mascot);
 });
 
-// FLOAT
+// FLOAT ANIMATION
 const clock = new THREE.Clock();
 
 function animate() {
