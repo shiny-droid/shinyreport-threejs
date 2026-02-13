@@ -1,8 +1,9 @@
 import * as THREE from 'https://esm.sh/three@0.160.0';
 import { GLTFLoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+import { RGBELoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/RGBELoader.js';
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b1e34);
+scene.background = new THREE.Color(0x071a2c);
 
 // CAMERA
 const camera = new THREE.PerspectiveCamera(
@@ -19,7 +20,8 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.4;
+renderer.physicallyCorrectLights = true;
 document.body.appendChild(renderer.domElement);
 
 // RESIZE
@@ -29,15 +31,24 @@ window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// LIGHTING (correcto y equilibrado)
+// 🔥 HDRI ENVIRONMENT
+const rgbeLoader = new RGBELoader();
+rgbeLoader.load(
+  'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_09_1k.hdr',
+  (texture) => {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    scene.environment = texture;
+  }
+);
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+// LIGHTING SUAVE
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
 
-const key = new THREE.DirectionalLight(0xffffff, 1.5);
+const key = new THREE.DirectionalLight(0xffffff, 2);
 key.position.set(5, 10, 5);
 scene.add(key);
 
-const rim = new THREE.DirectionalLight(0x88ccff, 1.2);
+const rim = new THREE.DirectionalLight(0x88ccff, 2);
 rim.position.set(-5, 5, -5);
 scene.add(rim);
 
@@ -49,34 +60,52 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
 
   mascot = gltf.scene;
 
-  // scale automático
   const box = new THREE.Box3().setFromObject(mascot);
   const size = new THREE.Vector3();
   box.getSize(size);
   const maxDim = Math.max(size.x, size.y, size.z);
-  const scale = 6 / maxDim;
+  const scale = 4.8 / maxDim;
   mascot.scale.setScalar(scale);
 
-  // centrar
   box.setFromObject(mascot);
   const center = new THREE.Vector3();
   box.getCenter(center);
   mascot.position.sub(center);
 
-  // rotación perfil izquierda
-  mascot.rotation.y = Math.PI + THREE.MathUtils.degToRad(180);
+  mascot.position.y += 1.2;
+
+  mascot.rotation.y = Math.PI + THREE.MathUtils.degToRad(225);
+
+  // 🔥 MATERIAL CRISTAL REAL
+  mascot.traverse((child) => {
+    if (child.isMesh) {
+      child.material = new THREE.MeshPhysicalMaterial({
+        color: 0x99ddff,
+        metalness: 0,
+        roughness: 0.05,
+        transmission: 1,
+        thickness: 2,
+        transparent: true,
+        opacity: 1,
+        ior: 1.5,
+        clearcoat: 1,
+        clearcoatRoughness: 0,
+        envMapIntensity: 1.5
+      });
+    }
+  });
 
   scene.add(mascot);
 });
 
-// ANIMATE
+// FLOAT
 const clock = new THREE.Clock();
 
 function animate() {
   requestAnimationFrame(animate);
 
   if (mascot) {
-    mascot.position.y = Math.sin(clock.getElapsedTime() * 0.8) * 0.25;
+    mascot.position.y += Math.sin(clock.getElapsedTime() * 0.8) * 0.002;
   }
 
   renderer.render(scene, camera);
