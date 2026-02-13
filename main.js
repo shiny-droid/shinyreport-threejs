@@ -2,11 +2,14 @@ import * as THREE from 'https://esm.sh/three@0.160.0';
 import { GLTFLoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 import { FontLoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'https://esm.sh/three@0.160.0/examples/jsm/geometries/TextGeometry.js';
+import { EffectComposer } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js';
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b1e34);
+scene.background = new THREE.Color(0x071a2c);
 
-// Camera
+// CAMERA
 const camera = new THREE.PerspectiveCamera(
   40,
   window.innerWidth / window.innerHeight,
@@ -15,35 +18,52 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.set(0, 3, 14);
 
-// Renderer
+// RENDERER
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.2;
+renderer.toneMappingExposure = 1.4;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
+
+// POSTPROCESSING
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+
+const bloom = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  1.4,  // strength
+  0.4,  // radius
+  0.85  // threshold
+);
+composer.addPass(bloom);
 
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Lights
-scene.add(new THREE.AmbientLight(0xffffff, 1));
+// 🔥 ILUMINACIÓN CINEMÁTICA
 
-const keyLight = new THREE.DirectionalLight(0xffffff, 2);
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+
+const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
 keyLight.position.set(5, 10, 5);
 scene.add(keyLight);
 
-const rimLight = new THREE.DirectionalLight(0x88ccff, 2);
-rimLight.position.set(-5, 5, -5);
+const rimLight = new THREE.DirectionalLight(0x88ccff, 3);
+rimLight.position.set(-5, 4, -6);
 scene.add(rimLight);
 
-let mascot;
-let orbitGroup = new THREE.Group();
-scene.add(orbitGroup);
+const pointGlow = new THREE.PointLight(0x66ccff, 8, 15);
+pointGlow.position.set(0, 2, 0);
+scene.add(pointGlow);
 
+// MODEL
+let mascot;
 const loader = new GLTFLoader();
 
 loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
@@ -53,7 +73,6 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
   const box = new THREE.Box3().setFromObject(mascot);
   const size = new THREE.Vector3();
   box.getSize(size);
-
   const maxDim = Math.max(size.x, size.y, size.z);
   const scale = 6 / maxDim;
   mascot.scale.setScalar(scale);
@@ -63,74 +82,42 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
   box.getCenter(center);
   mascot.position.sub(center);
 
-  // 🔥 Rotación total: +45° más
-  mascot.rotation.y = Math.PI + THREE.MathUtils.degToRad(90);
+  mascot.rotation.y = Math.PI + THREE.MathUtils.degToRad(135);
 
-  scene.add(mascot);
-
-  createCurvedRing();
-});
-
-function createCurvedRing() {
-
-  const fontLoader = new FontLoader();
-
-  fontLoader.load(
-    'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
-    (font) => {
-
-      const text = "COMING SOON";
-      const letters = text.split("");
-
-      const radius = 5.5;
-      const totalAngle = Math.PI; // arco más compacto
-      const startAngle = -totalAngle / 2;
-
-      letters.forEach((letter, i) => {
-
-        const geo = new TextGeometry(letter, {
-          font: font,
-          size: 0.6,
-          height: 0.05,
-        });
-
-        const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        const mesh = new THREE.Mesh(geo, mat);
-
-        // 🔥 menos espacio entre letras
-        const angle = startAngle + (i / (letters.length - 1)) * totalAngle;
-
-        mesh.position.x = Math.sin(angle) * radius;
-        mesh.position.z = Math.cos(angle) * radius;
-
-        mesh.rotation.y = angle;
-
-        // 🔥 altura brazos
-        mesh.position.y = 1.1;
-
-        orbitGroup.add(mesh);
+  // 🔥 MATERIAL CRISTAL
+  mascot.traverse((child) => {
+    if (child.isMesh) {
+      child.material = new THREE.MeshPhysicalMaterial({
+        color: 0x99ddff,
+        metalness: 0,
+        roughness: 0.05,
+        transmission: 1,
+        thickness: 1.5,
+        transparent: true,
+        opacity: 0.9,
+        clearcoat: 1,
+        clearcoatRoughness: 0,
+        ior: 1.5,
       });
     }
-  );
-}
+  });
 
-// Animation
+  scene.add(mascot);
+});
+
+// ANIMACIÓN
 const clock = new THREE.Clock();
-const LOOP_DURATION = 10; // 🔥 más lento (10 segundos)
 
 function animate() {
   requestAnimationFrame(animate);
 
   const t = clock.getElapsedTime();
-  const progress = (t % LOOP_DURATION) / LOOP_DURATION;
 
   if (mascot) {
-    mascot.position.y = Math.sin(progress * Math.PI * 2) * 0.25;
+    mascot.position.y = Math.sin(t * 0.8) * 0.25;
   }
 
-  orbitGroup.rotation.y = progress * Math.PI * 2;
-
-  renderer.render(scene, camera);
+  composer.render();
 }
 
 animate();
