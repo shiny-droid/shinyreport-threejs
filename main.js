@@ -23,6 +23,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 document.body.appendChild(renderer.domElement);
 
+// Resize
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -62,9 +63,12 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
   box.getCenter(center);
   mascot.position.sub(center);
 
+  // 🔥 ROTAR 90° A LA IZQUIERDA
+  mascot.rotation.y = Math.PI / 2;
+
   scene.add(mascot);
 
-  // Attach ring to mascot
+  // Anclar aro al modelo
   mascot.add(ringGroup);
 
   createRing();
@@ -92,20 +96,24 @@ function createRing() {
       const count = 16;
 
       for (let i = 0; i < count; i++) {
+
         const mesh = new THREE.Mesh(textGeo, textMat);
+
         const angle = (i / count) * Math.PI * 2;
 
         mesh.position.x = Math.cos(angle) * radius;
         mesh.position.z = Math.sin(angle) * radius;
 
-        mesh.lookAt(0, 0, 0);
+        // 🔥 ORIENTACIÓN TANGENCIAL CORRECTA
+        mesh.rotation.y = -angle + Math.PI / 2;
+
         ringGroup.add(mesh);
       }
 
       // 🔥 ALTURA DE LA CINTURA
-      ringGroup.position.y = 0.5;
+      ringGroup.position.y = 0.4;
 
-      // inclinación ligera
+      // ligera inclinación tipo planeta
       ringGroup.rotation.x = Math.PI / 3;
     }
   );
@@ -125,7 +133,7 @@ function animate() {
     mascot.position.y = Math.sin(progress * Math.PI * 2) * 0.3;
   }
 
-  // rota el aro alrededor del modelo
+  // rotación del aro
   ringGroup.rotation.y = progress * Math.PI * 2;
 
   renderer.render(scene, camera);
