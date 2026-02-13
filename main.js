@@ -13,7 +13,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
-camera.position.set(0, 3, 15);
+camera.position.set(0, 3, 14);
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -23,7 +23,6 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 document.body.appendChild(renderer.domElement);
 
-// Resize
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -33,11 +32,11 @@ window.addEventListener("resize", () => {
 // Lights
 scene.add(new THREE.AmbientLight(0xffffff, 1));
 
-const keyLight = new THREE.DirectionalLight(0x7dd3ff, 2.5);
+const keyLight = new THREE.DirectionalLight(0xffffff, 2);
 keyLight.position.set(5, 10, 5);
 scene.add(keyLight);
 
-const rimLight = new THREE.DirectionalLight(0xffffff, 1.5);
+const rimLight = new THREE.DirectionalLight(0x88ccff, 2);
 rimLight.position.set(-5, 5, -5);
 scene.add(rimLight);
 
@@ -47,9 +46,10 @@ let ringGroup = new THREE.Group();
 const loader = new GLTFLoader();
 
 loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
+
   mascot = gltf.scene;
 
-  // Center & scale model automatically
+  // Auto scale
   const box = new THREE.Box3().setFromObject(mascot);
   const size = new THREE.Vector3();
   box.getSize(size);
@@ -63,12 +63,12 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
   box.getCenter(center);
   mascot.position.sub(center);
 
-  // 🔥 ROTAR 90° A LA IZQUIERDA
+  // 🔥 Mirar a la izquierda
   mascot.rotation.y = Math.PI / 2;
 
   scene.add(mascot);
 
-  // Anclar aro al modelo
+  // Añadir aro al modelo
   mascot.add(ringGroup);
 
   createRing();
@@ -82,44 +82,36 @@ function createRing() {
     'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
     (font) => {
 
-      const textGeo = new TextGeometry("COMING SOON • ", {
+      const textGeo = new TextGeometry("COMING SOON", {
         font: font,
-        size: 0.5,
+        size: 0.6,
         height: 0.05,
+        curveSegments: 12
       });
 
       const textMat = new THREE.MeshBasicMaterial({
         color: 0xffffff
       });
 
-      const radius = 6;
-      const count = 16;
+      const mesh = new THREE.Mesh(textGeo, textMat);
 
-      for (let i = 0; i < count; i++) {
+      // centrar texto
+      textGeo.computeBoundingBox();
+      const textWidth = textGeo.boundingBox.max.x - textGeo.boundingBox.min.x;
+      mesh.position.x = -textWidth / 2;
 
-        const mesh = new THREE.Mesh(textGeo, textMat);
+      ringGroup.add(mesh);
 
-        const angle = (i / count) * Math.PI * 2;
-
-        mesh.position.x = Math.cos(angle) * radius;
-        mesh.position.z = Math.sin(angle) * radius;
-
-        // 🔥 ORIENTACIÓN TANGENCIAL CORRECTA
-        mesh.rotation.y = -angle + Math.PI / 2;
-
-        ringGroup.add(mesh);
-      }
-
-      // 🔥 ALTURA DE LA CINTURA
+      // 🔥 altura cintura
       ringGroup.position.y = 0.4;
 
-      // ligera inclinación tipo planeta
-      ringGroup.rotation.x = Math.PI / 3;
+      // 🔥 horizontal puro (sin inclinación)
+      ringGroup.rotation.x = 0;
     }
   );
 }
 
-// Animation
+// Animación
 const clock = new THREE.Clock();
 const LOOP_DURATION = 5;
 
@@ -133,7 +125,7 @@ function animate() {
     mascot.position.y = Math.sin(progress * Math.PI * 2) * 0.3;
   }
 
-  // rotación del aro
+  // 🔥 rotación horizontal
   ringGroup.rotation.y = progress * Math.PI * 2;
 
   renderer.render(scene, camera);
