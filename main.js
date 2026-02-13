@@ -50,7 +50,6 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
 
   mascot = gltf.scene;
 
-  // Auto scale
   const box = new THREE.Box3().setFromObject(mascot);
   const size = new THREE.Vector3();
   box.getSize(size);
@@ -64,8 +63,8 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
   box.getCenter(center);
   mascot.position.sub(center);
 
-  // 🔥 Rotar 45° más a la izquierda (perfil)
-  mascot.rotation.y = Math.PI + THREE.MathUtils.degToRad(45);
+  // 🔥 Rotación total: +45° más
+  mascot.rotation.y = Math.PI + THREE.MathUtils.degToRad(90);
 
   scene.add(mascot);
 
@@ -83,8 +82,8 @@ function createCurvedRing() {
       const text = "COMING SOON";
       const letters = text.split("");
 
-      const radius = 6;
-      const totalAngle = Math.PI * 1.2; // arco visible
+      const radius = 5.5;
+      const totalAngle = Math.PI; // arco más compacto
       const startAngle = -totalAngle / 2;
 
       letters.forEach((letter, i) => {
@@ -96,18 +95,18 @@ function createCurvedRing() {
         });
 
         const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-
         const mesh = new THREE.Mesh(geo, mat);
 
-        const angle = startAngle + (i / letters.length) * totalAngle;
+        // 🔥 menos espacio entre letras
+        const angle = startAngle + (i / (letters.length - 1)) * totalAngle;
 
         mesh.position.x = Math.sin(angle) * radius;
         mesh.position.z = Math.cos(angle) * radius;
 
-        // 🔥 orientar tangencialmente
         mesh.rotation.y = angle;
 
-        mesh.position.y = 0.4; // cintura
+        // 🔥 altura brazos
+        mesh.position.y = 1.1;
 
         orbitGroup.add(mesh);
       });
@@ -117,7 +116,7 @@ function createCurvedRing() {
 
 // Animation
 const clock = new THREE.Clock();
-const LOOP_DURATION = 5;
+const LOOP_DURATION = 10; // 🔥 más lento (10 segundos)
 
 function animate() {
   requestAnimationFrame(animate);
@@ -126,10 +125,9 @@ function animate() {
   const progress = (t % LOOP_DURATION) / LOOP_DURATION;
 
   if (mascot) {
-    mascot.position.y = Math.sin(progress * Math.PI * 2) * 0.3;
+    mascot.position.y = Math.sin(progress * Math.PI * 2) * 0.25;
   }
 
-  // 🔥 esto hace que todo el texto orbite como cinturón
   orbitGroup.rotation.y = progress * Math.PI * 2;
 
   renderer.render(scene, camera);
