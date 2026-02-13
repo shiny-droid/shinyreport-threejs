@@ -1,15 +1,14 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { EffectComposer } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { FontLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/TextGeometry.js';
+import * as THREE from 'https://esm.sh/three@0.160.0';
+import { GLTFLoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+import { EffectComposer } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { FontLoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'https://esm.sh/three@0.160.0/examples/jsm/geometries/TextGeometry.js';
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b1e34);
 
-// Camera
 const camera = new THREE.PerspectiveCamera(
   45,
   window.innerWidth / window.innerHeight,
@@ -18,33 +17,17 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.set(0, 1.2, 5);
 
-// Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
-// Postprocessing
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-composer.addPass(
-  new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    1.2,
-    0.6,
-    0.85
-  )
-);
-
-// Responsive
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  composer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Lights
 scene.add(new THREE.AmbientLight(0x7dd3ff, 0.6));
 
 const keyLight = new THREE.DirectionalLight(0x7dd3ff, 2);
@@ -55,7 +38,6 @@ const rimLight = new THREE.DirectionalLight(0xffffff, 1.2);
 rimLight.position.set(-3, 2, -3);
 scene.add(rimLight);
 
-// Load GLB
 let mascot;
 const loader = new GLTFLoader();
 loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
@@ -64,14 +46,12 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
   scene.add(mascot);
 });
 
-// Ring group
 const ringGroup = new THREE.Group();
 scene.add(ringGroup);
 
-// Load font and create ring text
 const fontLoader = new FontLoader();
 fontLoader.load(
-  'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_regular.typeface.json',
+  'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
   (font) => {
     const textGeo = new TextGeometry("COMING SOON • ", {
       font: font,
@@ -97,7 +77,6 @@ fontLoader.load(
   }
 );
 
-// Perfect 5s loop
 const clock = new THREE.Clock();
 const LOOP_DURATION = 5;
 
@@ -113,7 +92,7 @@ function animate() {
 
   ringGroup.rotation.y = progress * Math.PI * 2;
 
-  composer.render();
+  renderer.render(scene, camera);
 }
 
 animate();
