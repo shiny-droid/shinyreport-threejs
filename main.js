@@ -9,38 +9,38 @@ const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera(
   45,
-  window.innerWidth/window.innerHeight,
+  window.innerWidth / window.innerHeight,
   0.1,
   100
 );
 
-camera.position.set(0,1.2,4);
+camera.position.set(0, 1.2, 4);
 
 const renderer = new THREE.WebGLRenderer({
-  antialias:true,
-  alpha:true
+  antialias: true,
+  alpha: true
 });
 
-renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.4;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.physicallyCorrectLights = true;
+
 document.body.appendChild(renderer.domElement);
 
 //////////////////////////////
 // LIGHTS
 //////////////////////////////
 
-scene.add(new THREE.AmbientLight(0xffffff,0.8));
+scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 
-const keyLight = new THREE.DirectionalLight(0xffffff,2);
-keyLight.position.set(5,5,5);
+const keyLight = new THREE.DirectionalLight(0xffffff, 2);
+keyLight.position.set(5, 5, 5);
 scene.add(keyLight);
 
-const rimLight = new THREE.DirectionalLight(0x66ccff,2.5);
-rimLight.position.set(-5,3,-5);
+const rimLight = new THREE.DirectionalLight(0x66ccff, 2.5);
+rimLight.position.set(-5, 3, -5);
 scene.add(rimLight);
 
 //////////////////////////////
@@ -51,7 +51,7 @@ const loader = new GLTFLoader();
 
 loader.load(
   "assets/substitute.glb",
-  (gltf)=>{
+  (gltf) => {
 
     const model = gltf.scene;
     scene.add(model);
@@ -63,7 +63,7 @@ loader.load(
 
     model.position.sub(center);
 
-    const maxDim = Math.max(size.x,size.y,size.z);
+    const maxDim = Math.max(size.x, size.y, size.z);
     const scale = 2 / maxDim;
     model.scale.setScalar(scale);
 
@@ -71,20 +71,20 @@ loader.load(
     model.rotation.y = Math.PI * 1.8;
 
     // CRYSTAL MATERIAL
-    model.traverse((child)=>{
-      if(child.isMesh){
+    model.traverse((child) => {
+      if (child.isMesh) {
         child.material = new THREE.MeshPhysicalMaterial({
-          color:0x88ccff,
-          metalness:0,
-          roughness:0.05,
-          transmission:1,
-          thickness:1.5,
-          transparent:true,
-          opacity:1,
-          ior:1.45,
-          clearcoat:1,
-          clearcoatRoughness:0,
-          envMapIntensity:1.5
+          color: 0x88ccff,
+          metalness: 0,
+          roughness: 0.05,
+          transmission: 1,
+          thickness: 1.5,
+          transparent: true,
+          opacity: 1,
+          ior: 1.45,
+          clearcoat: 1,
+          clearcoatRoughness: 0,
+          envMapIntensity: 1.5
         });
       }
     });
@@ -92,7 +92,7 @@ loader.load(
     console.log("Modelo cargado correctamente");
   },
   undefined,
-  (error)=>{
+  (error) => {
     console.error("Error cargando modelo:", error);
   }
 );
@@ -101,9 +101,9 @@ loader.load(
 // ANIMATE
 //////////////////////////////
 
-function animate(){
+function animate() {
   requestAnimationFrame(animate);
-  renderer.render(scene,camera);
+  renderer.render(scene, camera);
 }
 
 animate();
@@ -112,8 +112,8 @@ animate();
 // RESPONSIVE
 //////////////////////////////
 
-window.addEventListener("resize",()=>{
-  camera.aspect = window.innerWidth/window.innerHeight;
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth,window.innerHeight);
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
