@@ -1,32 +1,29 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Crystal Render</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crystal Render</title>
 
-<style>
-body{
-  margin:0;
-  overflow:hidden;
-  background:#000;
-}
-
-#bg{
-  position:fixed;
-  inset:0;
-  background:url("assets/background.png") center/cover no-repeat;
-  filter:blur(18px) brightness(0.7);
-  transform:scale(1.1);
-  z-index:-1;
-}
-</style>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
 </head>
 <body>
 
-<div id="bg"></div>
+  <!-- THREE CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/loaders/GLTFLoader.js"></script>
 
-<script type="module" src="main.js"></script>
+  <!-- TU SCRIPT -->
+  <script src="main.js"></script>
 
 </body>
 </html>
