@@ -1,3 +1,6 @@
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
+
 //////////////////////////////
 // SCENE
 //////////////////////////////
@@ -22,19 +25,21 @@ renderer.setSize(window.innerWidth,window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.4;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.physicallyCorrectLights = true;
 document.body.appendChild(renderer.domElement);
 
 //////////////////////////////
 // LIGHTS
 //////////////////////////////
 
-scene.add(new THREE.AmbientLight(0xffffff,1));
+scene.add(new THREE.AmbientLight(0xffffff,0.8));
 
 const keyLight = new THREE.DirectionalLight(0xffffff,2);
 keyLight.position.set(5,5,5);
 scene.add(keyLight);
 
-const rimLight = new THREE.DirectionalLight(0x66ccff,3);
+const rimLight = new THREE.DirectionalLight(0x66ccff,2.5);
 rimLight.position.set(-5,3,-5);
 scene.add(rimLight);
 
@@ -42,11 +47,11 @@ scene.add(rimLight);
 // LOAD MODEL
 //////////////////////////////
 
-const loader = new THREE.GLTFLoader();
+const loader = new GLTFLoader();
 
 loader.load(
-  "substitute.glb",
-  function(gltf){
+  "assets/substitute.glb",
+  (gltf)=>{
 
     const model = gltf.scene;
     scene.add(model);
@@ -66,7 +71,7 @@ loader.load(
     model.rotation.y = Math.PI * 1.8;
 
     // CRYSTAL MATERIAL
-    model.traverse(function(child){
+    model.traverse((child)=>{
       if(child.isMesh){
         child.material = new THREE.MeshPhysicalMaterial({
           color:0x88ccff,
@@ -79,7 +84,7 @@ loader.load(
           ior:1.45,
           clearcoat:1,
           clearcoatRoughness:0,
-          reflectivity:1
+          envMapIntensity:1.5
         });
       }
     });
@@ -87,7 +92,7 @@ loader.load(
     console.log("Modelo cargado correctamente");
   },
   undefined,
-  function(error){
+  (error)=>{
     console.error("Error cargando modelo:", error);
   }
 );
@@ -107,7 +112,7 @@ animate();
 // RESPONSIVE
 //////////////////////////////
 
-window.addEventListener("resize",function(){
+window.addEventListener("resize",()=>{
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth,window.innerHeight);
