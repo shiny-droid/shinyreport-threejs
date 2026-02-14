@@ -1,96 +1,70 @@
-const scene = new THREE.Scene();
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 
-const camera = new THREE.PerspectiveCamera(
+let scene = new THREE.Scene();
+
+let camera = new THREE.PerspectiveCamera(
   45,
   window.innerWidth / window.innerHeight,
   0.1,
-  100
+  1000
 );
-camera.position.set(0, 1.5, 5);
 
-const renderer = new THREE.WebGLRenderer({
-  antialias: true,
-  alpha: true
-});
+camera.position.set(0, 1.5, 4);
+
+let renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.2;
-
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
+// Background
+new THREE.TextureLoader().load(
+  './assets/background.png',
+  function(texture) {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    scene.background = texture;
+  }
+);
 
-
-// BACKGROUND
-const textureLoader = new THREE.TextureLoader();
-textureLoader.load("assets/background.png", (texture) => {
-  scene.background = texture;
-});
-
-
-
-// LIGHTS
-const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+// Lights
+let ambient = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambient);
 
-const light1 = new THREE.PointLight(0x88ccff, 3);
-light1.position.set(5, 5, 5);
-scene.add(light1);
+let light = new THREE.DirectionalLight(0xffffff, 2);
+light.position.set(5, 10, 5);
+scene.add(light);
 
-const light2 = new THREE.PointLight(0x00ffff, 2);
-light2.position.set(-5, 3, 5);
-scene.add(light2);
+// Load Model
+let loader = new GLTFLoader();
 
+loader.load(
+  './assets/substitute.glb',
+  function(gltf) {
 
+    let model = gltf.scene;
 
-// LOAD MODEL
-const loader = new THREE.GLTFLoader();
+    model.scale.set(1.2, 1.2, 1.2);
+    model.position.y = 0.5;
+    model.rotation.y = -Math.PI / 2;
 
-loader.load("assets/substitute.glb", function (gltf) {
+    scene.add(model);
 
-  const model = gltf.scene;
+    animate();
 
-  model.scale.set(1.2, 1.2, 1.2);
-  model.position.set(0, 0.8, 0);
-  model.rotation.y = -Math.PI * 0.75;
-
-  model.traverse(function (child) {
-    if (child.isMesh) {
-      child.material = new THREE.MeshPhysicalMaterial({
-        color: 0x88ffff,
-        metalness: 0,
-        roughness: 0,
-        transmission: 1,
-        thickness: 1.5,
-        transparent: true,
-        opacity: 0.55,
-        ior: 1.4,
-        clearcoat: 1,
-        clearcoatRoughness: 0,
-        emissive: 0x66ffff,
-        emissiveIntensity: 0.3
-      });
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
     }
-  });
+  },
+  undefined,
+  function(error) {
+    console.error(error);
+  }
+);
 
-  scene.add(model);
-
-});
-
-
-
-// RESIZE
-window.addEventListener("resize", function () {
+// Resize
+window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
-
-
-// LOOP
-function animate() {
-  requestAnimationFrame(animate);
-  renderer.render(scene, camera);
-}
-
-animate();
