@@ -1,34 +1,6 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ShinyReport</title>
-
-<style>
-body{
-  margin:0;
-  overflow:hidden;
-  background:#000;
-}
-#bg{
-  position:fixed;
-  inset:0;
-  background:url("background.png") center/cover no-repeat;
-  filter:blur(15px) brightness(0.7);
-  transform:scale(1.1);
-  z-index:-1;
-}
-</style>
-</head>
-<body>
-
-<div id="bg"></div>
-
-<script type="module">
-
-import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
-import { GLTFLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
+//////////////////////////////
+// SCENE
+//////////////////////////////
 
 const scene = new THREE.Scene();
 
@@ -39,19 +11,22 @@ const camera = new THREE.PerspectiveCamera(
   100
 );
 
-camera.position.set(0,1.5,4);
+camera.position.set(0,1.2,4);
 
-const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
+const renderer = new THREE.WebGLRenderer({
+  antialias:true,
+  alpha:true
+});
+
 renderer.setSize(window.innerWidth,window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.4;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
-//////////////////////
-// LUCES FUERTES
-//////////////////////
+//////////////////////////////
+// LIGHTS
+//////////////////////////////
 
 scene.add(new THREE.AmbientLight(0xffffff,1));
 
@@ -63,20 +38,20 @@ const rimLight = new THREE.DirectionalLight(0x66ccff,3);
 rimLight.position.set(-5,3,-5);
 scene.add(rimLight);
 
-//////////////////////
-// CARGA MODELO
-//////////////////////
+//////////////////////////////
+// LOAD MODEL
+//////////////////////////////
 
-const loader = new GLTFLoader();
+const loader = new THREE.GLTFLoader();
 
 loader.load(
-  "substitute.glb",   // ← asegúrate que el nombre es EXACTO
+  "substitute.glb",
   function(gltf){
 
     const model = gltf.scene;
     scene.add(model);
 
-    // Auto centrar
+    // AUTO CENTER
     const box = new THREE.Box3().setFromObject(model);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
@@ -87,11 +62,11 @@ loader.load(
     const scale = 2 / maxDim;
     model.scale.setScalar(scale);
 
-    model.position.y = 1;
+    model.position.y = 0.8;
     model.rotation.y = Math.PI * 1.8;
 
-    // MATERIAL CRISTAL
-    model.traverse((child)=>{
+    // CRYSTAL MATERIAL
+    model.traverse(function(child){
       if(child.isMesh){
         child.material = new THREE.MeshPhysicalMaterial({
           color:0x88ccff,
@@ -103,7 +78,8 @@ loader.load(
           opacity:1,
           ior:1.45,
           clearcoat:1,
-          envMapIntensity:1.5
+          clearcoatRoughness:0,
+          reflectivity:1
         });
       }
     });
@@ -116,26 +92,23 @@ loader.load(
   }
 );
 
-//////////////////////
-// ANIMACIÓN
-//////////////////////
+//////////////////////////////
+// ANIMATE
+//////////////////////////////
 
 function animate(){
   requestAnimationFrame(animate);
   renderer.render(scene,camera);
 }
+
 animate();
 
-//////////////////////
+//////////////////////////////
 // RESPONSIVE
-//////////////////////
+//////////////////////////////
 
-window.addEventListener("resize",()=>{
+window.addEventListener("resize",function(){
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth,window.innerHeight);
 });
-
-</script>
-</body>
-</html>
