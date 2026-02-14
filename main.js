@@ -1,12 +1,9 @@
 import * as THREE from 'https://esm.sh/three@0.160.0';
 import { GLTFLoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { EffectComposer } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'https://esm.sh/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { RGBELoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/RGBELoader.js';
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x04101c);
-scene.fog = new THREE.Fog(0x04101c, 15, 40);
+scene.background = new THREE.Color(0x081622);
 
 // CAMERA
 const camera = new THREE.PerspectiveCamera(
@@ -23,69 +20,42 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.8;
+renderer.toneMappingExposure = 1.5;
+renderer.physicallyCorrectLights = true;
 document.body.appendChild(renderer.domElement);
-
-// POST PROCESSING
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-
-const bloom = new UnrealBloomPass(
-  new THREE.Vector2(window.innerWidth, window.innerHeight),
-  1.6,
-  0.6,
-  0.6
-);
-composer.addPass(bloom);
 
 // RESIZE
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  composer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// LIGHTING
-scene.add(new THREE.AmbientLight(0xffffff, 0.2));
-
-const rimLight = new THREE.DirectionalLight(0x00ccff, 3);
-rimLight.position.set(-5, 5, -5);
-scene.add(rimLight);
-
-// PARTICLES
-const particlesGeo = new THREE.BufferGeometry();
-const particleCount = 250;
-const positions = [];
-
-for (let i = 0; i < particleCount; i++) {
-  positions.push(
-    (Math.random() - 0.5) * 30,
-    Math.random() * 10,
-    (Math.random() - 0.5) * 30
-  );
-}
-
-particlesGeo.setAttribute(
-  'position',
-  new THREE.Float32BufferAttribute(positions, 3)
+// HDRI ENVIRONMENT
+new RGBELoader().load(
+  'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_09_1k.hdr',
+  (texture) => {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    scene.environment = texture;
+  }
 );
 
-const particlesMat = new THREE.PointsMaterial({
-  color: 0x00ccff,
-  size: 0.05,
-  transparent: true,
-  opacity: 0.6
-});
+// LIGHTING
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
 
-const particles = new THREE.Points(particlesGeo, particlesMat);
-scene.add(particles);
+const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
+keyLight.position.set(5, 10, 5);
+scene.add(keyLight);
+
+const rimLight = new THREE.DirectionalLight(0x88ccff, 2.5);
+rimLight.position.set(-5, 5, -5);
+scene.add(rimLight);
 
 // LOAD MODEL
 let mascot;
 const loader = new GLTFLoader();
 
-loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
+loader.load('./assets/substitute.glb', (gltf) => {
 
   mascot = gltf.scene;
 
@@ -105,70 +75,43 @@ loader.load('./assets/pokemon_substitute_plushie.glb', (gltf) => {
   mascot.position.y += 1.2;
   mascot.rotation.y = Math.PI + THREE.MathUtils.degToRad(225);
 
+  // 🔥 SOLO aplicar cristal a la mesh "substitute"
   mascot.traverse((child) => {
-    if (child.isMesh) {
+    if (child.isMesh && child.name.toLowerCase().includes("substitute")) {
 
-      const name = child.name.toLowerCase();
+      child.material = new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(0.65, 0.9, 1.0),
+        metalness: 0,
+        roughness: 0.05,
+        transmission: 0.95,       // 🔥 Muy transparente
+        thickness: 3.0,
+        transparent: true,
+        opacity: 1,
+        ior: 1.15,
+        clearcoat: 1,
+        clearcoatRoughness: 0,
+        attenuationColor: new THREE.Color(0.7, 0.9, 1),
+        attenuationDistance: 3,
+        envMapIntensity: 2.0
+      });
 
-      if (name.includes("eye")) {
-
-        child.material = new THREE.MeshBasicMaterial({
-          color: 0xffffff
-        });
-
-      } else {
-
-        child.material = new THREE.MeshPhysicalMaterial({
-          color: new THREE.Color(0.2, 0.8, 1.0),
-          metalness: 0,
-          roughness: 0,
-          transmission: 0,
-          transparent: true,
-          opacity: 0.35,
-          emissive: new THREE.Color(0.2, 0.9, 1.0),
-          emissiveIntensity: 2.0,
-          clearcoat: 0
-        });
-
-      }
     }
   });
 
   scene.add(mascot);
-
-  // HALO
-  const haloGeo = new THREE.RingGeometry(3.5, 4.5, 64);
-  const haloMat = new THREE.MeshBasicMaterial({
-    color: 0x00ccff,
-    transparent: true,
-    opacity: 0.4,
-    side: THREE.DoubleSide
-  });
-
-  const halo = new THREE.Mesh(haloGeo, haloMat);
-  halo.rotation.x = -Math.PI / 2;
-  halo.position.y = 1.2;
-  scene.add(halo);
-
-  mascot.userData.halo = halo;
 });
 
-// ANIMATION
+// FLOAT ANIMATION
 const clock = new THREE.Clock();
 
 function animate() {
   requestAnimationFrame(animate);
 
-  const t = clock.getElapsedTime();
-
   if (mascot) {
-    mascot.position.y = 1.2 + Math.sin(t * 1.2) * 0.25;
-    mascot.userData.halo.rotation.z += 0.01;
+    mascot.position.y = 1.2 + Math.sin(clock.getElapsedTime() * 0.8) * 0.25;
   }
 
-  particles.rotation.y += 0.0005;
-
-  composer.render();
+  renderer.render(scene, camera);
 }
 
 animate();
