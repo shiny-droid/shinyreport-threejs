@@ -11,12 +11,14 @@ camera.position.set(0, 1.5, 4);
 
 let renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputEncoding = THREE.sRGBEncoding;
 document.body.appendChild(renderer.domElement);
 
 // Background
 new THREE.TextureLoader().load(
   './assets/background.png',
   function(texture) {
+    texture.encoding = THREE.sRGBEncoding;
     scene.background = texture;
   }
 );
@@ -57,7 +59,7 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-// Resize
+// Responsive
 window.addEventListener('resize', function() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
