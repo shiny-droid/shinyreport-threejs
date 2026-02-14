@@ -1,12 +1,12 @@
 {
-  "name": "shinyreport-landing",
+  "name": "shinyreport-threejs",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "npx vite",
+    "build": "npx vite build",
+    "preview": "npx vite preview"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
