@@ -11,58 +11,62 @@ function useComingSoonTexture() {
     const ctx = c.getContext("2d");
 
     ctx.clearRect(0, 0, c.width, c.height);
-
     ctx.fillStyle = "rgba(255,255,255,0.92)";
-    ctx.font = "700 140px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
+    ctx.font =
+      "700 140px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
     ctx.textBaseline = "middle";
 
     const phrase = "COMING SOON   ";
-    let x = 0;
     const y = c.height / 2;
     const w = ctx.measureText(phrase).width;
 
-    while (x < c.width + w) {
-      ctx.fillText(phrase, x, y);
-      x += w;
-    }
+    for (let x = 0; x < c.width + w; x += w) ctx.fillText(phrase, x, y);
 
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
-    tex.repeat.set(1.15, 1);
+    tex.repeat.set(1.2, 1);
     tex.anisotropy = 8;
-    tex.needsUpdate = true;
     return tex;
   }, []);
 }
 
-function Ring() {
+function WaistRing({ waistY = 0.25 }) {
   const mesh = useRef();
   const tex = useComingSoonTexture();
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (!mesh.current) return;
-    mesh.current.rotation.y += delta * 0.55;
-    tex.offset.x -= delta * 0.18;
+    // gira alrededor de la cintura (eje Y local del muñeco)
+    mesh.current.rotation.y += delta * 0.9;
+    // “scroll” del texto
+    tex.offset.x -= delta * 0.25;
   });
 
   return (
-    <mesh ref={mesh} position={[0, 0.05, 0]} rotation={[Math.PI / 2.05, 0, 0]}>
-      <torusGeometry args={[1.65, 0.12, 32, 256]} />
+    <mesh
+      ref={mesh}
+      // cintura (ajusta waistY si queda alto/bajo)
+      position={[0, waistY, 0]}
+      // un pelín inclinado como en la referencia
+      rotation={[0.12, 0, 0]}
+    >
+      {/* MÁS PEQUEÑO */}
+      <torusGeometry args={[0.55, 0.06, 32, 256]} />
       <meshStandardMaterial
         map={tex}
         transparent
         opacity={1}
-        roughness={0.28}
-        metalness={0.15}
+        roughness={0.25}
+        metalness={0.1}
         emissive={new THREE.Color("#ffffff")}
-        emissiveIntensity={0.55}
+        emissiveIntensity={0.65}
       />
     </mesh>
   );
 }
 
-function Plush() {
+function PlushWithRing() {
   const { scene } = useGLTF("/assets/substitute.glb");
   const group = useRef();
 
@@ -83,21 +87,26 @@ function Plush() {
           opacity: 0.98,
           clearcoat: 1,
           clearcoatRoughness: 0.18,
-          envMapIntensity: 1.25
+          envMapIntensity: 1.25,
         });
       }
     });
   }, [scene]);
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     if (!group.current) return;
-    group.current.position.y = 0.02 + Math.sin(state.clock.elapsedTime * 1.2) * 0.05;
-    group.current.rotation.y += delta * 0.22;
+    // flotación suave
+    group.current.position.y = -0.25 + Math.sin(state.clock.elapsedTime * 1.2) * 0.035;
+    // rotación lenta del muñeco (el aro gira aparte)
+    group.current.rotation.y = state.clock.elapsedTime * 0.18;
   });
 
   return (
-    <group ref={group} position={[0, -0.15, 0]} scale={1.35}>
+    <group ref={group} position={[0, 0, 0]} scale={1.0}>
+      {/* El GLB */}
       <primitive object={scene} />
+      {/* El aro ES HIJO del muñeco */}
+      <WaistRing waistY={0.18} />
     </group>
   );
 }
@@ -105,7 +114,7 @@ function Plush() {
 function Scene() {
   return (
     <>
-      <ambientLight intensity={0.55} />
+      <ambientLight intensity={0.6} />
       <directionalLight position={[3, 4, 2]} intensity={1.35} />
       <pointLight position={[-3, 1.5, 2]} intensity={1.2} />
       <pointLight position={[0, -2.5, 3]} intensity={0.9} />
@@ -118,11 +127,10 @@ function Scene() {
         }
       >
         <Environment preset="city" />
-        <Plush />
-        <Ring />
+        <PlushWithRing />
       </Suspense>
 
-      <fog attach="fog" args={["#0b2233", 3.5, 10]} />
+      <fog attach="fog" args={["#0b2233", 4.0, 12]} />
     </>
   );
 }
@@ -136,7 +144,8 @@ export default function App() {
       <div className="canvasWrap">
         <Canvas
           dpr={[1, 2]}
-          camera={{ position: [0, 0.55, 4.2], fov: 38 }}
+          // Cámara más centrada y más lejos (para que no se corte)
+          camera={{ position: [0, 0.35, 5.2], fov: 34 }}
           gl={{ antialias: true, alpha: true }}
         >
           <Scene />
@@ -146,9 +155,15 @@ export default function App() {
       <div className="bottomText">
         <div className="title">SHINYREPORT</div>
         <div className="links">
-          <a href="https://instagram.com" target="_blank" rel="noreferrer">Instagram</a>
-          <a href="https://tiktok.com" target="_blank" rel="noreferrer">TikTok</a>
-          <a href="https://youtube.com" target="_blank" rel="noreferrer">YouTube</a>
+          <a href="https://instagram.com" target="_blank" rel="noreferrer">
+            Instagram
+          </a>
+          <a href="https://tiktok.com" target="_blank" rel="noreferrer">
+            TikTok
+          </a>
+          <a href="https://youtube.com" target="_blank" rel="noreferrer">
+            YouTube
+          </a>
         </div>
       </div>
     </div>
