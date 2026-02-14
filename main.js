@@ -1,51 +1,44 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
 
-//////////////////////////////
-// SCENE
-//////////////////////////////
-
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
 
 const camera = new THREE.PerspectiveCamera(
-  45,
+  60,
   window.innerWidth / window.innerHeight,
   0.1,
-  100
+  1000
 );
 
-camera.position.set(0, 1.2, 4);
+camera.position.set(0, 1.5, 5);
 
-const renderer = new THREE.WebGLRenderer({
-  antialias: true,
-  alpha: true
-});
-
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.4;
-
 document.body.appendChild(renderer.domElement);
 
-//////////////////////////////
-// LIGHTS
-//////////////////////////////
+////////////////////////
+// LUCES FUERTES DEBUG
+////////////////////////
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+scene.add(new THREE.AmbientLight(0xffffff, 3));
 
-const keyLight = new THREE.DirectionalLight(0xffffff, 2);
-keyLight.position.set(5, 5, 5);
-scene.add(keyLight);
+const light1 = new THREE.DirectionalLight(0xffffff, 5);
+light1.position.set(5, 5, 5);
+scene.add(light1);
 
-const rimLight = new THREE.DirectionalLight(0x66ccff, 2.5);
-rimLight.position.set(-5, 3, -5);
-scene.add(rimLight);
+////////////////////////
+// GRID PARA VER CENTRO
+////////////////////////
 
-//////////////////////////////
+const grid = new THREE.GridHelper(10, 10);
+scene.add(grid);
+
+////////////////////////
 // LOAD MODEL
-//////////////////////////////
+////////////////////////
 
 const loader = new GLTFLoader();
 
@@ -53,53 +46,35 @@ loader.load(
   "assets/substitute.glb",
   (gltf) => {
 
+    console.log("MODELO CARGADO");
+
     const model = gltf.scene;
     scene.add(model);
 
-    // AUTO CENTER
-    const box = new THREE.Box3().setFromObject(model);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
+    // ESCALA SIMPLE
+    model.scale.set(1,1,1);
 
-    model.position.sub(center);
+    model.position.set(0,0,0);
 
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const scale = 2 / maxDim;
-    model.scale.setScalar(scale);
-
-    model.position.y = 0.8;
-    model.rotation.y = Math.PI * 1.8;
-
-    // CRYSTAL MATERIAL
+    // MATERIAL BÁSICO DEBUG (SIN CRISTAL)
     model.traverse((child) => {
       if (child.isMesh) {
-        child.material = new THREE.MeshPhysicalMaterial({
-          color: 0x88ccff,
-          metalness: 0,
-          roughness: 0.05,
-          transmission: 1,
-          thickness: 1.5,
-          transparent: true,
-          opacity: 1,
-          ior: 1.45,
-          clearcoat: 1,
-          clearcoatRoughness: 0,
-          envMapIntensity: 1.5
+        child.material = new THREE.MeshStandardMaterial({
+          color: 0x00ff00
         });
       }
     });
 
-    console.log("Modelo cargado correctamente");
   },
   undefined,
   (error) => {
-    console.error("Error cargando modelo:", error);
+    console.error("ERROR CARGANDO:", error);
   }
 );
 
-//////////////////////////////
+////////////////////////
 // ANIMATE
-//////////////////////////////
+////////////////////////
 
 function animate() {
   requestAnimationFrame(animate);
@@ -108,9 +83,9 @@ function animate() {
 
 animate();
 
-//////////////////////////////
-// RESPONSIVE
-//////////////////////////////
+////////////////////////
+// RESIZE
+////////////////////////
 
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
