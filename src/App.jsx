@@ -1,7 +1,7 @@
 import React, { Suspense, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment, useGLTF, Html } from "@react-three/drei";
+import { Environment, useGLTF, Html, Center } from "@react-three/drei";
 
 function useComingSoonTexture() {
   return useMemo(() => {
@@ -31,36 +31,33 @@ function useComingSoonTexture() {
   }, []);
 }
 
-function WaistRing({ waistY = 0.25 }) {
+function WaistRing({ waistY = 0.2 }) {
   const mesh = useRef();
   const tex = useComingSoonTexture();
 
   useFrame((_, delta) => {
     if (!mesh.current) return;
-    // gira alrededor de la cintura (eje Y local del muñeco)
-    mesh.current.rotation.y += delta * 0.9;
-    // “scroll” del texto
-    tex.offset.x -= delta * 0.25;
+    mesh.current.rotation.y += delta * 0.9; // gira alrededor de la cintura
+    tex.offset.x -= delta * 0.25; // corre el texto
   });
 
   return (
     <mesh
       ref={mesh}
-      // cintura (ajusta waistY si queda alto/bajo)
       position={[0, waistY, 0]}
-      // un pelín inclinado como en la referencia
-      rotation={[0.12, 0, 0]}
+      // CLAVE: el toro debe estar en XZ (hueco en Y) => aro alrededor de la cintura
+      rotation={[Math.PI / 2, 0, 0]}
     >
-      {/* MÁS PEQUEÑO */}
+      {/* más pequeño y controlado */}
       <torusGeometry args={[0.55, 0.06, 32, 256]} />
       <meshStandardMaterial
         map={tex}
         transparent
         opacity={1}
-        roughness={0.25}
+        roughness={0.22}
         metalness={0.1}
         emissive={new THREE.Color("#ffffff")}
-        emissiveIntensity={0.65}
+        emissiveIntensity={0.75}
       />
     </mesh>
   );
@@ -76,18 +73,21 @@ function PlushWithRing() {
         obj.castShadow = true;
         obj.receiveShadow = true;
 
+        // Cristal MÁS visible (evita que se vea negro)
         obj.material = new THREE.MeshPhysicalMaterial({
-          color: new THREE.Color("#d7f0ff"),
-          roughness: 0.12,
+          color: new THREE.Color("#e6f6ff"),
+          roughness: 0.08,
           metalness: 0.0,
           transmission: 1.0,
-          thickness: 0.9,
+          thickness: 0.7,
           ior: 1.35,
           transparent: true,
           opacity: 0.98,
           clearcoat: 1,
-          clearcoatRoughness: 0.18,
-          envMapIntensity: 1.25,
+          clearcoatRoughness: 0.12,
+          envMapIntensity: 1.8,
+          emissive: new THREE.Color("#bfe9ff"),
+          emissiveIntensity: 0.08
         });
       }
     });
@@ -95,18 +95,18 @@ function PlushWithRing() {
 
   useFrame((state) => {
     if (!group.current) return;
-    // flotación suave
-    group.current.position.y = -0.25 + Math.sin(state.clock.elapsedTime * 1.2) * 0.035;
-    // rotación lenta del muñeco (el aro gira aparte)
+    group.current.position.y = -0.15 + Math.sin(state.clock.elapsedTime * 1.2) * 0.03;
     group.current.rotation.y = state.clock.elapsedTime * 0.18;
   });
 
   return (
-    <group ref={group} position={[0, 0, 0]} scale={1.0}>
-      {/* El GLB */}
-      <primitive object={scene} />
-      {/* El aro ES HIJO del muñeco */}
-      <WaistRing waistY={0.18} />
+    <group ref={group}>
+      {/* Center centra el GLB y evita piezas “fuera” */}
+      <Center>
+        {/* Ajusta scale si lo quieres más grande/pequeño */}
+        <primitive object={scene} scale={0.9} />
+        <WaistRing waistY={0.18} />
+      </Center>
     </group>
   );
 }
@@ -114,10 +114,10 @@ function PlushWithRing() {
 function Scene() {
   return (
     <>
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[3, 4, 2]} intensity={1.35} />
-      <pointLight position={[-3, 1.5, 2]} intensity={1.2} />
-      <pointLight position={[0, -2.5, 3]} intensity={0.9} />
+      <ambientLight intensity={0.75} />
+      <directionalLight position={[3, 4, 2]} intensity={1.4} />
+      <pointLight position={[-3, 1.5, 2]} intensity={1.1} />
+      <pointLight position={[0, -2.5, 3]} intensity={1.0} />
 
       <Suspense
         fallback={
@@ -130,7 +130,7 @@ function Scene() {
         <PlushWithRing />
       </Suspense>
 
-      <fog attach="fog" args={["#0b2233", 4.0, 12]} />
+      <fog attach="fog" args={["#0b2233", 4.0, 14]} />
     </>
   );
 }
@@ -144,9 +144,13 @@ export default function App() {
       <div className="canvasWrap">
         <Canvas
           dpr={[1, 2]}
-          // Cámara más centrada y más lejos (para que no se corte)
-          camera={{ position: [0, 0.35, 5.2], fov: 34 }}
+          camera={{ position: [0, 0.35, 5.0], fov: 34 }}
           gl={{ antialias: true, alpha: true }}
+          onCreated={({ gl }) => {
+            gl.outputColorSpace = THREE.SRGBColorSpace;
+            gl.toneMapping = THREE.ACESFilmicToneMapping;
+            gl.toneMappingExposure = 1.15;
+          }}
         >
           <Scene />
         </Canvas>
@@ -155,15 +159,9 @@ export default function App() {
       <div className="bottomText">
         <div className="title">SHINYREPORT</div>
         <div className="links">
-          <a href="https://instagram.com" target="_blank" rel="noreferrer">
-            Instagram
-          </a>
-          <a href="https://tiktok.com" target="_blank" rel="noreferrer">
-            TikTok
-          </a>
-          <a href="https://youtube.com" target="_blank" rel="noreferrer">
-            YouTube
-          </a>
+          <a href="https://instagram.com" target="_blank" rel="noreferrer">Instagram</a>
+          <a href="https://tiktok.com" target="_blank" rel="noreferrer">TikTok</a>
+          <a href="https://youtube.com" target="_blank" rel="noreferrer">YouTube</a>
         </div>
       </div>
     </div>
